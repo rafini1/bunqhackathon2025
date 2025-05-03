@@ -79,7 +79,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
-  const { updateBalances } = useBalance();
+  const { updateBalances, totalBalance } = useBalance();
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -238,31 +238,50 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   };
   
   const handleConfirmTransfer = () => {
-    toast({
-      title: "Transfer Successful",
-      description: `Sent ${transferDetails.amount} ${transferDetails.currency} to ${transferDetails.recipient}`,
-      variant: "default"
-    });
-    
-    // Deduct the amount from the balance
+    // Check if we have sufficient balance
     if (transferDetails.amount) {
-      // Convert amount from string (e.g., "5.00") to number
       const amountToDeduct = parseFloat(transferDetails.amount);
-      if (!isNaN(amountToDeduct)) {
+      if (!isNaN(amountToDeduct) && amountToDeduct <= totalBalance) {
+        // Process the transfer
+        toast({
+          title: "Transfer Successful",
+          description: `Sent ${transferDetails.amount} ${transferDetails.currency} to ${transferDetails.recipient}`,
+          variant: "default"
+        });
+        
+        // Deduct the amount from the balance
         updateBalances(amountToDeduct);
+        
+        // Add confirmation message to chat
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "system",
+            content: `Transfer completed successfully. ${transferDetails.amount} ${transferDetails.currency} has been sent to ${transferDetails.recipient}.`,
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        // Handle insufficient balance
+        toast({
+          title: "Transfer Failed",
+          description: "You don't have enough funds to complete this transfer.",
+          variant: "destructive"
+        });
+        
+        // Add error message to chat
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "system",
+            content: `I'm sorry, but you don't have enough funds to send ${transferDetails.amount} ${transferDetails.currency}. Your current balance is €${totalBalance.toFixed(2).replace('.', ',')}.`,
+            timestamp: new Date(),
+          },
+        ]);
       }
     }
-    
-    // Add confirmation message to chat
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: (Date.now() + 1).toString(),
-        role: "system",
-        content: `Transfer completed successfully. ${transferDetails.amount} ${transferDetails.currency} has been sent to ${transferDetails.recipient}.`,
-        timestamp: new Date(),
-      },
-    ]);
     
     setShowSendMoneyConfirmation(false);
   };
