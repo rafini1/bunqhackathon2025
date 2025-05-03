@@ -223,14 +223,14 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   
   // Parse NAV response format: NAV;destination
   const parseNavigationResponse = (responseStr: string): { destination: string } | null => {
+    if (responseStr === "NAV") {
+      // If it's just "NAV" without a destination, default to travel page
+      return { destination: "travel" };
+    }
+    
     if (!responseStr.startsWith("NAV;")) return null;
     
     const parts = responseStr.split(";");
-    
-    // If it's just "NAV" without a destination
-    if (parts.length === 1) {
-      return { destination: "requested page" };
-    }
     
     if (parts.length !== 2) return null;
     
@@ -326,9 +326,8 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
         
         // Map the destination to a route
         const destination = actionDetails.destination?.toLowerCase() || "";
-        if (destination.includes("travel")) {
-          navigateTo = "/travel";
-        }
+        // Default to travel page for now since it's our only other page
+        navigateTo = "/travel";
         break;
     }
     
