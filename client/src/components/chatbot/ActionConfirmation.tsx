@@ -154,8 +154,10 @@ export function ActionConfirmation({
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-bold">{getTitleForActionType()}</AlertDialogTitle>
-          <AlertDialogDescription className="text-base">
-            {getDescriptionForActionType()}
+          <AlertDialogDescription asChild>
+            <div className="text-base">
+              {getDescriptionForActionType()}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

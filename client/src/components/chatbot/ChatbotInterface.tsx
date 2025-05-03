@@ -168,10 +168,10 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   }, [messages, isOpen]);
 
   // Parse SM response format: SM;amount;currency;recipient
-  const parseSendMoneyResponse = (response: string): TransferDetails | null => {
-    if (!response.startsWith("SM;")) return null;
+  const parseSendMoneyResponse = (responseStr: string): TransferDetails | null => {
+    if (!responseStr.startsWith("SM;")) return null;
     
-    const parts = response.split(";");
+    const parts = responseStr.split(";");
     if (parts.length !== 4) return null;
     
     return {
@@ -182,20 +182,20 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   };
   
   // Parse BC response (Block Card)
-  const parseBlockCardResponse = (response: string): boolean => {
-    return response === "BC" || response.startsWith("BC;");
+  const parseBlockCardResponse = (responseStr: string): boolean => {
+    return responseStr === "BC" || responseStr.startsWith("BC;");
   };
   
   // Parse UC response (Unblock Card)
-  const parseUnblockCardResponse = (response: string): boolean => {
-    return response === "UC" || response.startsWith("UC;");
+  const parseUnblockCardResponse = (responseStr: string): boolean => {
+    return responseStr === "UC" || responseStr.startsWith("UC;");
   };
   
   // Parse SMR response format: SMR;amount;currency;recipient
-  const parseMoneyRequestResponse = (response: string): TransferDetails | null => {
-    if (!response.startsWith("SMR;")) return null;
+  const parseMoneyRequestResponse = (responseStr: string): TransferDetails | null => {
+    if (!responseStr.startsWith("SMR;")) return null;
     
-    const parts = response.split(";");
+    const parts = responseStr.split(";");
     if (parts.length !== 4) return null;
     
     return {
@@ -206,10 +206,10 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   };
   
   // Parse SA response format: SA;accountName
-  const parseSavingsAccountResponse = (response: string): { accountName: string } | null => {
-    if (!response.startsWith("SA;")) return null;
+  const parseSavingsAccountResponse = (responseStr: string): { accountName: string } | null => {
+    if (!responseStr.startsWith("SA;")) return null;
     
-    const parts = response.split(";");
+    const parts = responseStr.split(";");
     if (parts.length !== 2) return null;
     
     return {
@@ -218,10 +218,10 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   };
   
   // Parse NAV response format: NAV;destination
-  const parseNavigationResponse = (response: string): { destination: string } | null => {
-    if (!response.startsWith("NAV;")) return null;
+  const parseNavigationResponse = (responseStr: string): { destination: string } | null => {
+    if (!responseStr.startsWith("NAV;")) return null;
     
-    const parts = response.split(";");
+    const parts = responseStr.split(";");
     
     // If it's just "NAV" without a destination
     if (parts.length === 1) {
