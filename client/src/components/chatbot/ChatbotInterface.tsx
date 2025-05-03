@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Send, Cpu, Mic, MicOff } from "lucide-react";
+import { useLocation } from "wouter";
 import { ChatMessage } from "./ChatMessage";
 import { SendMoneyConfirmation } from "./SendMoneyConfirmation";
 import { ActionConfirmation, ActionType } from "./ActionConfirmation";
@@ -80,6 +81,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
   const { updateBalances, totalBalance } = useBalance();
+  const [, setLocation] = useLocation();
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -290,6 +292,8 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
     let title = "";
     let description = "";
     let chatMessage = "";
+    let shouldNavigate = false;
+    let navigateTo = "";
     
     switch (actionDetails.type) {
       case 'block':
@@ -316,6 +320,15 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
         title = "Navigation";
         description = `Navigating to ${actionDetails.destination}`;
         chatMessage = `Navigating to ${actionDetails.destination} page. Is there anything specific you'd like to do there?`;
+        
+        // Set navigation flag
+        shouldNavigate = true;
+        
+        // Map the destination to a route
+        const destination = actionDetails.destination?.toLowerCase() || "";
+        if (destination.includes("travel")) {
+          navigateTo = "/travel";
+        }
         break;
     }
     
@@ -337,6 +350,17 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
     ]);
     
     setShowActionConfirmation(false);
+    
+    // Handle navigation after confirmation
+    if (shouldNavigate && navigateTo) {
+      // Close chatbot first
+      onClose();
+      
+      // Then navigate to the requested page
+      setTimeout(() => {
+        setLocation(navigateTo);
+      }, 500);
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
