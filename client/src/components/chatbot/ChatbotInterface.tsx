@@ -122,7 +122,15 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   
   // Toggle speech recognition
   const toggleListening = () => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current) {
+      // Fallback for browsers without speech recognition
+      toast({
+        title: "Speech Recognition Not Available",
+        description: "Your browser doesn't support speech recognition. Try Chrome or Edge.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (isListening) {
       recognitionRef.current.stop();
@@ -278,21 +286,24 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             />
             
             {/* Microphone button for speech-to-text */}
-            {hasRecognitionSupport && (
-              <button
-                type="button"
-                onClick={toggleListening}
-                className={`rounded-full w-10 h-10 flex items-center justify-center transition-colors ${
-                  isListening 
-                    ? "bg-red-500 text-white animate-pulse" 
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-                disabled={isLoading}
-                title={isListening ? "Stop listening" : "Start voice input"}
-              >
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`rounded-full w-10 h-10 flex items-center justify-center transition-colors ${
+                isListening 
+                  ? "bg-red-500 text-white animate-pulse" 
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+              disabled={isLoading || !hasRecognitionSupport}
+              title={!hasRecognitionSupport 
+                ? "Speech recognition not supported in this browser" 
+                : isListening 
+                  ? "Stop listening" 
+                  : "Start voice input"
+              }
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
             
             <button
               type="submit"
