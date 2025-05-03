@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { X, Send, Cpu, Mic, MicOff } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { SendMoneyConfirmation } from "./SendMoneyConfirmation";
+import { ActionConfirmation, ActionType } from "./ActionConfirmation";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,9 +61,18 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSendMoneyConfirmation, setShowSendMoneyConfirmation] = useState(false);
+  const [showActionConfirmation, setShowActionConfirmation] = useState(false);
   const [transferDetails, setTransferDetails] = useState<TransferDetails>({});
   const [isListening, setIsListening] = useState(false);
   const [hasRecognitionSupport, setHasRecognitionSupport] = useState(false);
+  const [actionDetails, setActionDetails] = useState<{
+    type: ActionType;
+    destination?: string;
+    accountName?: string;
+    amount?: string;
+    currency?: string;
+    recipient?: string;
+  }>({ type: 'block' });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -171,6 +181,60 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
     };
   };
   
+  // Parse BC response (Block Card)
+  const parseBlockCardResponse = (response: string): boolean => {
+    return response === "BC" || response.startsWith("BC;");
+  };
+  
+  // Parse UC response (Unblock Card)
+  const parseUnblockCardResponse = (response: string): boolean => {
+    return response === "UC" || response.startsWith("UC;");
+  };
+  
+  // Parse SMR response format: SMR;amount;currency;recipient
+  const parseMoneyRequestResponse = (response: string): TransferDetails | null => {
+    if (!response.startsWith("SMR;")) return null;
+    
+    const parts = response.split(";");
+    if (parts.length !== 4) return null;
+    
+    return {
+      amount: parts[1],
+      currency: parts[2],
+      recipient: parts[3]
+    };
+  };
+  
+  // Parse SA response format: SA;accountName
+  const parseSavingsAccountResponse = (response: string): { accountName: string } | null => {
+    if (!response.startsWith("SA;")) return null;
+    
+    const parts = response.split(";");
+    if (parts.length !== 2) return null;
+    
+    return {
+      accountName: parts[1]
+    };
+  };
+  
+  // Parse NAV response format: NAV;destination
+  const parseNavigationResponse = (response: string): { destination: string } | null => {
+    if (!response.startsWith("NAV;")) return null;
+    
+    const parts = response.split(";");
+    
+    // If it's just "NAV" without a destination
+    if (parts.length === 1) {
+      return { destination: "requested page" };
+    }
+    
+    if (parts.length !== 2) return null;
+    
+    return {
+      destination: parts[1]
+    };
+  };
+  
   const handleConfirmTransfer = () => {
     toast({
       title: "Transfer Successful",
@@ -178,6 +242,42 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       variant: "default"
     });
     setShowSendMoneyConfirmation(false);
+  };
+  
+  const handleConfirmAction = () => {
+    let title = "";
+    let description = "";
+    
+    switch (actionDetails.type) {
+      case 'block':
+        title = "Card Blocked";
+        description = "Your card has been successfully blocked.";
+        break;
+      case 'unblock':
+        title = "Card Unblocked";
+        description = "Your card has been successfully unblocked.";
+        break;
+      case 'request':
+        title = "Money Request Sent";
+        description = `Requested ${actionDetails.amount} ${actionDetails.currency} from ${actionDetails.recipient}`;
+        break;
+      case 'savings':
+        title = "Savings Account Created";
+        description = `New savings account "${actionDetails.accountName}" has been created.`;
+        break;
+      case 'navigate':
+        title = "Navigation";
+        description = `Navigating to ${actionDetails.destination}`;
+        break;
+    }
+    
+    toast({
+      title,
+      description,
+      variant: "default"
+    });
+    
+    setShowActionConfirmation(false);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -197,11 +297,11 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest("POST", "/api/chatbot", {
+      const apiResponse = await apiRequest("POST", "/api/chatbot", {
         message: input,
       });
       
-      const data = await response.json();
+      const data = await apiResponse.json();
       
       // Add the AI response to the chat
       setMessages((prev) => [
@@ -214,12 +314,71 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
         },
       ]);
       
-      // Check if the response contains a money transfer request
-      if (data.response.includes("SM;")) {
-        const details = parseSendMoneyResponse(data.response);
+      // Check for different response types
+      const responseText = data.response;
+      
+      // Send Money (SM) - Transfer
+      if (responseText.includes("SM;")) {
+        const details = parseSendMoneyResponse(responseText);
         if (details) {
           setTransferDetails(details);
           setShowSendMoneyConfirmation(true);
+          return;
+        }
+      }
+      
+      // Block Card (BC)
+      if (parseBlockCardResponse(responseText)) {
+        setActionDetails({ type: 'block' });
+        setShowActionConfirmation(true);
+        return;
+      }
+      
+      // Unblock Card (UC)
+      if (parseUnblockCardResponse(responseText)) {
+        setActionDetails({ type: 'unblock' });
+        setShowActionConfirmation(true);
+        return;
+      }
+      
+      // Send Money Request (SMR)
+      if (responseText.includes("SMR;")) {
+        const details = parseMoneyRequestResponse(responseText);
+        if (details) {
+          setActionDetails({ 
+            type: 'request', 
+            amount: details.amount, 
+            currency: details.currency, 
+            recipient: details.recipient 
+          });
+          setShowActionConfirmation(true);
+          return;
+        }
+      }
+      
+      // Savings Account (SA)
+      if (responseText.includes("SA;")) {
+        const details = parseSavingsAccountResponse(responseText);
+        if (details) {
+          setActionDetails({ 
+            type: 'savings', 
+            accountName: details.accountName 
+          });
+          setShowActionConfirmation(true);
+          return;
+        }
+      }
+      
+      // Navigation (NAV)
+      if (responseText.includes("NAV")) {
+        const details = parseNavigationResponse(responseText);
+        if (details) {
+          setActionDetails({ 
+            type: 'navigate', 
+            destination: details.destination 
+          });
+          setShowActionConfirmation(true);
+          return;
         }
       }
     } catch (error) {
@@ -333,6 +492,14 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
         onClose={() => setShowSendMoneyConfirmation(false)}
         onConfirm={handleConfirmTransfer}
         transferDetails={transferDetails}
+      />
+      
+      {/* Generic Action Confirmation Dialog */}
+      <ActionConfirmation
+        isOpen={showActionConfirmation}
+        onClose={() => setShowActionConfirmation(false)}
+        onConfirm={handleConfirmAction}
+        actionDetails={actionDetails}
       />
     </div>
   );
