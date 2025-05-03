@@ -37,8 +37,8 @@ export function ChatMessage({ message }: MessageProps) {
       }`}
     >
       {!isUser && (
-        <Avatar className="w-8 h-8 bg-orange-600 flex-shrink-0">
-          <AvatarFallback>
+        <Avatar className="w-8 h-8 flex-shrink-0 rainbow-avatar">
+          <AvatarFallback className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
             <Bot className="text-white h-4 w-4" />
           </AvatarFallback>
         </Avatar>
@@ -46,7 +46,10 @@ export function ChatMessage({ message }: MessageProps) {
 
       <div
         className={`rounded-lg p-3 max-w-[80%] ${
-          isUser ? "bg-blue-600" : "bg-gray-800"
+          isUser ? "bg-blue-600" : 
+          message.content.includes("completed successfully") || message.content.includes("has been created successfully") || message.content.includes("has been successfully") ? 
+            "bg-gradient-to-r from-green-500 to-emerald-600" : 
+            "bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500"
         }`}
       >
         <div className="text-white">{formatMessage(message.content)}</div>

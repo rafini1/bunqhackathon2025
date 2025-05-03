@@ -439,17 +439,17 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
       <div className="bg-black rounded-xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+        <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
           <div className="flex items-center gap-2">
-            <Cpu className="h-5 w-5 text-green-500" />
-            <h3 className="text-lg font-semibold text-white">bunq Assistant</h3>
+            <Cpu className="h-5 w-5 text-white" />
+            <h3 className="text-lg font-semibold text-white">Finn</h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full flex items-center">
+            <span className="text-xs bg-black bg-opacity-30 text-white px-2 py-0.5 rounded-full flex items-center">
               <span className="w-2 h-2 rounded-full bg-white mr-1.5 animate-pulse"></span>
               NVIDIA AI
             </span>
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <button onClick={onClose} className="text-white hover:text-gray-200">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -474,8 +474,8 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Ask me about bunq banking..."
-              className="flex-1 bg-gray-800 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-600"
+              placeholder="Ask Finn about bunq banking..."
+              className="flex-1 bg-gray-800 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-700"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
@@ -488,7 +488,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
               className={`rounded-full w-10 h-10 flex items-center justify-center transition-colors ${
                 isListening 
                   ? "bg-red-500 text-white animate-pulse" 
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  : "bg-gradient-to-r from-indigo-500 to-blue-500 text-white"
               }`}
               disabled={isLoading || !hasRecognitionSupport}
               title={!hasRecognitionSupport 
@@ -503,7 +503,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             
             <button
               type="submit"
-              className="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-50"
+              className="bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-50"
               disabled={isLoading || !input.trim()}
             >
               <Send className="h-4 w-4" />
