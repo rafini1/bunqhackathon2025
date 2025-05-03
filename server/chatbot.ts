@@ -10,7 +10,7 @@ const fallbackResponses = {
   investment: "bunq offers investment options through the Easy Investments feature. You can invest in various ETFs and manage your portfolio directly from the app.",
   travel: "bunq is great for travel! You can spend abroad with no markup on exchange rates, withdraw cash worldwide, and even get travel insurance with premium plans.",
   security: "bunq takes security seriously with features like biometric authentication, instant card blocking, transaction notifications, and secure chat support.",
-  default: "I'm your bunq banking assistant. I can help you with account information, transactions, and general banking questions. What would you like to know about?"
+  default: "Hi there! I'm your bunq AI assistant. I can help you manage your finances, explore banking options, and provide personalized advice. How can I assist you today with your banking needs?"
 };
 
 // Function to determine best response from fallback options
@@ -52,7 +52,7 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       console.log("Calling NVIDIA API with message:", message);
       
       // Prepare the system message to provide context for the AI
-      const systemMessage = "You are a helpful banking assistant for bunq bank. Answer user questions about banking, accounts, and financial services. Be concise and accurate.";
+      const systemMessage = "You are an advanced AI assistant integrated with bunq bank's services. You can help users manage their finances, understand banking products, and provide personalized financial advice. Be friendly, professional, and use a conversational tone. When possible, suggest relevant bunq features that might help the customer based on their questions.";
       
       // Create OpenAI client with NVIDIA API configuration
       const openai = new OpenAI({
@@ -103,7 +103,7 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       }
       
       // Add a more specific fallback response for API errors
-      const errorResponse = "I'm having trouble connecting to my AI service right now. As a bunq banking assistant, I can still help with common questions. " + getFallbackResponse(message);
+      const errorResponse = "I'm having trouble connecting to my advanced AI service right now. As your bunq financial assistant, I can still help with common banking questions. " + getFallbackResponse(message);
       
       return errorResponse;
     }
