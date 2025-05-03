@@ -120,7 +120,7 @@ export function AccountsSection() {
             }`}
           >
             {account.type === "card" ? (
-              <React.Fragment>
+              <>
                 <div className="mb-1 text-sm text-gray-300">{account.name}</div>
                 <div className="absolute bottom-0 left-0 right-0 h-3/4 rounded-lg overflow-hidden">
                   <div className="credit-card-gradient h-full"></div>
@@ -129,9 +129,9 @@ export function AccountsSection() {
                   <div className="w-6 h-6 bg-red-500 rounded-full opacity-80"></div>
                   <div className="w-6 h-6 bg-orange-500 rounded-full opacity-80 -ml-3"></div>
                 </div>
-              </React.Fragment>
+              </>
             ) : (
-              <React.Fragment>
+              <>
                 <div className="flex items-center gap-2 mb-2">
                   {renderIcon(account.type)}
                   <span className={`text-${account.color === "purple" ? "pink" : account.color === "orange" ? "orange" : "blue"}-300 font-medium`}>
@@ -144,7 +144,7 @@ export function AccountsSection() {
                    account.type === "main" ? `€ ${mainBalance.toFixed(2).replace('.', ',')}` :
                    account.balance}
                 </div>
-              </React.Fragment>
+              </>
             )}
           </div>
         ))}
