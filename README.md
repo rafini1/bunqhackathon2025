@@ -1,4 +1,4 @@
-# Bunq Banking App with AI Assistant
+# Bunq Banking App with AI Assistant by: Rafi Azmani, Keci Chilala, Mahir Baltit, Elvir nikq 
 
 A modern, AI-powered banking web application that transforms financial management into an engaging and interactive experience. This application features a dark mode interface with a rainbow color scheme and an intelligent AI assistant named "Finn" powered by NVIDIA AI.
 
@@ -61,10 +61,4 @@ The following environment variables are required:
 - `DATABASE_URL`: PostgreSQL connection string
 - `NVIDIA_API_KEY`: Your NVIDIA API key for AI functionality
 
-## License
 
-[Specify your license here]
-
-## Screenshots
-
-[Add screenshots here]
