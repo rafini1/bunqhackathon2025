@@ -9,7 +9,7 @@ export function ChatbotButton({ onClick }: ChatbotButtonProps) {
   return (
     <button 
       onClick={onClick}
-      className="fixed right-6 bottom-6 w-16 h-16 z-50 rounded-full bg-green-600 flex items-center justify-center shadow-lg shine transition-transform hover:scale-110"
+      className="fixed right-16 bottom-6 w-16 h-16 z-50 rounded-full bg-green-600 flex items-center justify-center shadow-lg shine transition-transform hover:scale-110"
       aria-label="Open NVIDIA AI chatbot"
     >
       <div className="relative">
