@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 100%;
+    
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+    
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
+    
+    --accent: 295 73% 40%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 214 100% 50%;
+
+    --chart-1: 295 73% 40%; /* Purple */
+    --chart-2: 23 100% 42%; /* Orange */
+    --chart-3: 214 100% 50%; /* Blue */
+    --chart-4: 16 100% 49%; /* Bright Orange */
+    --chart-5: 295 100% 42%; /* Action Purple */
+
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 214 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 295 73% 40%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 214 100% 50%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.card-gradient-blue {
+  @apply bg-gradient-to-br from-blue-600 to-blue-700;
+}
+
+.card-gradient-purple {
+  @apply bg-gradient-to-br from-purple-700 to-purple-900;
+}
+
+.card-gradient-orange {
+  @apply bg-gradient-to-br from-orange-600 to-orange-700;
+}
+
+.rainbow-gradient {
+  background: linear-gradient(
+    to right,
+    #ff0000, /* Red */
+    #ff7f00, /* Orange */
+    #ffff00, /* Yellow */
+    #00ff00, /* Green */
+    #0000ff, /* Blue */
+    #4b0082, /* Indigo */
+    #8b00ff  /* Violet */
+  );
+}
+
+.credit-card-gradient {
+  background: linear-gradient(to right,
+    rgb(237, 41, 57),   /* Red */
+    rgb(246, 79, 89),   /* Red-Orange */
+    rgb(255, 140, 0),   /* Orange */
+    rgb(255, 213, 0),   /* Yellow */
+    rgb(0, 175, 102),   /* Green */
+    rgb(0, 154, 139),   /* Teal */
+    rgb(0, 134, 191),   /* Light Blue */
+    rgb(0, 94, 184),    /* Blue */
+    rgb(20, 24, 82),    /* Navy */
+    rgb(136, 30, 228),  /* Purple */
+    rgb(200, 0, 161)    /* Pink */
+  );
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+.notification-dot {
+  @apply absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full;
+}
