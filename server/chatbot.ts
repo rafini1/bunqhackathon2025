@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Simple bot responses for demo when NVIDIA API is not available
+// Simple bot responses for backup when NVIDIA API is not available or has issues
 const fallbackResponses = {
   addMoney: "You can add money to your bunq account by making a bank transfer from another account, requesting money from a friend, or depositing cash at certain locations.",
   accountTypes: "bunq offers several account types: Main account for everyday banking, Savings account for earning interest, and Joint accounts for sharing with others. You can also have sub-accounts for specific purposes.",
@@ -35,11 +35,15 @@ function getFallbackResponse(message: string): string {
   }
 }
 
+// NVIDIA API Configuration
+// Note: The actual endpoint might need to be adjusted based on NVIDIA's specific API documentation
+const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions';
+const NVIDIA_FUNCTION_ID = 'bunq-banking-assistant'; // Replace with your actual function ID if needed
+
 // Handler for chatbot messages
 export async function handleChatbotMessage(message: string): Promise<string> {
   try {
-    // In a real implementation, this would connect to NVIDIA API
-    // For example using the NVIDIA API key from environment variables
+    // Get NVIDIA API key from environment variables
     const apiKey = process.env.NVIDIA_API_KEY;
     
     if (!apiKey) {
@@ -49,31 +53,48 @@ export async function handleChatbotMessage(message: string): Promise<string> {
     }
     
     try {
-      // This is where the actual NVIDIA API call would go
-      // const response = await axios.post(
-      //   'https://api.nvidia.com/ai/endpoint',
-      //   {
-      //     prompt: message,
-      //     max_tokens: 150,
-      //   },
-      //   {
-      //     headers: {
-      //       'Authorization': `Bearer ${apiKey}`,
-      //       'Content-Type': 'application/json',
-      //     },
-      //   }
-      // );
+      console.log("Calling NVIDIA API with message:", message);
       
-      // return response.data.choices[0].text;
+      // Prepare the system message to provide context for the AI
+      const systemMessage = "You are a helpful banking assistant for bunq bank. Answer user questions about banking, accounts, and financial services. Be concise and accurate.";
       
-      // For now, return fallback responses since we don't have real API access
-      return getFallbackResponse(message);
-    } catch (apiError) {
-      console.error("Error calling NVIDIA API:", apiError);
+      // Make the actual NVIDIA API call
+      const response = await axios.post(
+        `${NVIDIA_API_URL}/${NVIDIA_FUNCTION_ID}`,
+        {
+          input: {
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: message }
+            ]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      console.log("NVIDIA API response received:", response.status);
+      
+      // Extract the assistant's response from the API response
+      // Note: The exact structure depends on NVIDIA's API response format
+      // This is a generic example and might need adjustment
+      if (response.data && response.data.output && response.data.output.content) {
+        return response.data.output.content;
+      } else {
+        console.log("Unexpected API response format, using fallback:", response.data);
+        return getFallbackResponse(message);
+      }
+    } catch (error: any) {
+      console.error("Error calling NVIDIA API:", error?.message || "Unknown error");
+      // If there's an error with the API call, use the fallback responses
       return getFallbackResponse(message);
     }
-  } catch (error) {
-    console.error("Error in chatbot message handler:", error);
+  } catch (error: any) {
+    console.error("Error in chatbot message handler:", error?.message || "Unknown error");
     return "I'm sorry, I'm having trouble understanding right now. Please try again later.";
   }
 }
