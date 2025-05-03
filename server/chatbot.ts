@@ -3,34 +3,31 @@ import OpenAI from 'openai';
 
 // Simple bot responses for backup when NVIDIA API is not available or has issues
 const fallbackResponses = {
-  addMoney: "You can add money to your bunq account by making a bank transfer from another account, requesting money from a friend, or depositing cash at certain locations.",
-  accountTypes: "bunq offers several account types: Main account for everyday banking, Savings account for earning interest, and Joint accounts for sharing with others. You can also have sub-accounts for specific purposes.",
-  fees: "bunq offers different subscription plans with varying fees. The basic plan starts at €2.99/month, while premium plans offer more features and accounts for €8.99/month. There are no hidden fees for basic transactions.",
-  cardInfo: "bunq offers both physical and virtual debit and credit cards. You can customize your card design, set spending limits, and freeze/unfreeze your cards instantly via the app.",
-  investment: "bunq offers investment options through the Easy Investments feature. You can invest in various ETFs and manage your portfolio directly from the app.",
-  travel: "bunq is great for travel! You can spend abroad with no markup on exchange rates, withdraw cash worldwide, and even get travel insurance with premium plans.",
-  security: "bunq takes security seriously with features like biometric authentication, instant card blocking, transaction notifications, and secure chat support.",
-  default: "Hi there! I'm your bunq AI assistant. I can help you manage your finances, explore banking options, and provide personalized advice. How can I assist you today with your banking needs?"
+  block: "BC",
+  unblock: "UC",
+  send: "To send money I need to know: the amount, currency, and contact name. Please provide this information.",
+  request: "SMR",
+  savings: "To open a savings account I need to know what name you want for the account. Please provide this information.",
+  navigation: "NAV",
+  default: "Finn will answer this"
 };
 
-// Function to determine best response from fallback options
+// Function to determine best response from fallback options based on specific commands
 function getFallbackResponse(message: string): string {
   const lowerMessage = message.toLowerCase();
   
-  if (lowerMessage.includes("add money") || lowerMessage.includes("deposit")) {
-    return fallbackResponses.addMoney;
-  } else if (lowerMessage.includes("account type") || lowerMessage.includes("account options")) {
-    return fallbackResponses.accountTypes;
-  } else if (lowerMessage.includes("fee") || lowerMessage.includes("cost") || lowerMessage.includes("price") || lowerMessage.includes("subscription")) {
-    return fallbackResponses.fees;
-  } else if (lowerMessage.includes("card") || lowerMessage.includes("credit card") || lowerMessage.includes("debit card")) {
-    return fallbackResponses.cardInfo;
-  } else if (lowerMessage.includes("invest") || lowerMessage.includes("etf") || lowerMessage.includes("stock")) {
-    return fallbackResponses.investment;
-  } else if (lowerMessage.includes("travel") || lowerMessage.includes("abroad") || lowerMessage.includes("foreign")) {
-    return fallbackResponses.travel;
-  } else if (lowerMessage.includes("secure") || lowerMessage.includes("security") || lowerMessage.includes("safe")) {
-    return fallbackResponses.security;
+  if (lowerMessage.includes("block") && !lowerMessage.includes("unblock")) {
+    return fallbackResponses.block;
+  } else if (lowerMessage.includes("unblock")) {
+    return fallbackResponses.unblock;
+  } else if (lowerMessage.includes("send money") || lowerMessage.includes("transfer") || lowerMessage.includes("pay")) {
+    return fallbackResponses.send;
+  } else if (lowerMessage.includes("request money") || lowerMessage.includes("ask for payment")) {
+    return fallbackResponses.request;
+  } else if (lowerMessage.includes("savings") || lowerMessage.includes("save") || lowerMessage.includes("open account")) {
+    return fallbackResponses.savings;
+  } else if (lowerMessage.includes("find") || lowerMessage.includes("where") || lowerMessage.includes("how to") || lowerMessage.includes("navigate")) {
+    return fallbackResponses.navigation;
   } else {
     return fallbackResponses.default;
   }
@@ -52,7 +49,7 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       console.log("Calling NVIDIA API with message:", message);
       
       // Prepare the system message to provide context for the AI
-      const systemMessage = "You are an advanced AI assistant integrated with bunq bank's services. You can help users manage their finances, understand banking products, and provide personalized financial advice. Be friendly, professional, and use a conversational tone. When possible, suggest relevant bunq features that might help the customer based on their questions.";
+      const systemMessage = "You are a bot with a specific process for customers for a banking app. First you need to identify the question. You only answer certain questions within a specific domain. Block/unblock an account/card code: BC/UC. Send money code: SM. Send a money request code: SMR. Open a savings account code: SA. Navigation through the app or when the user is trying to find something within the app code: NAV. If the question of the customer does not apply to any of the before mentioned domains, then say 'Finn will answer this'. If it does apply every domain needs different information. for BC/UC it does not need anything and the output must be the code. For SM it needs to know the amount that needs to be sent, the currency and the contact name. if any of the variables is not mentioned, ask that what is missing and never fill in information yourself but you are allowed to change the amount needed to the right format and currency to the right format. if all is good then give the output {Code};{amount};{currency};{name}. amount in format ##.## currency in shortcut of 3 characters. and name just a string. For code SA, it needs to know what name the savings account should be. if any of the variables is not mentioned, ask that what is missing and never fill in information yourself. if all is good then give the output {Code};{name}. For code NAV: just give output {code}";
       
       // Create OpenAI client with NVIDIA API configuration
       const openai = new OpenAI({
@@ -102,13 +99,13 @@ export async function handleChatbotMessage(message: string): Promise<string> {
         console.error("No response object in error");
       }
       
-      // Add a more specific fallback response for API errors
-      const errorResponse = "I'm having trouble connecting to my advanced AI service right now. As your bunq financial assistant, I can still help with common banking questions. " + getFallbackResponse(message);
+      // Add a simple fallback response when API is unavailable
+      const errorResponse = getFallbackResponse(message);
       
       return errorResponse;
     }
   } catch (error: any) {
     console.error("Error in chatbot message handler:", error?.message || "Unknown error");
-    return "I'm sorry, I'm having trouble understanding right now. Please try again later.";
+    return "Finn will answer this";
   }
 }
