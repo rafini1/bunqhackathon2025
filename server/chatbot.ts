@@ -1,4 +1,5 @@
 import axios from "axios";
+import OpenAI from 'openai';
 
 // Simple bot responses for backup when NVIDIA API is not available or has issues
 const fallbackResponses = {
@@ -35,12 +36,6 @@ function getFallbackResponse(message: string): string {
   }
 }
 
-// NVIDIA API Configuration
-// Using the NVIDIA NVCF API endpoint as specified in the certificate
-// This is based on the error message showing the correct domain
-const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/chat/completions';
-// For troubleshooting, we'll add detailed logs
-
 // Handler for chatbot messages
 export async function handleChatbotMessage(message: string): Promise<string> {
   try {
@@ -59,65 +54,53 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       // Prepare the system message to provide context for the AI
       const systemMessage = "You are a helpful banking assistant for bunq bank. Answer user questions about banking, accounts, and financial services. Be concise and accurate.";
       
-      // Make the actual NVIDIA API call with the format matching NVIDIA's NVCF API
-      const response = await axios.post(
-        NVIDIA_API_URL,
-        {
-          // NVCF API specific format
-          model: "meta/llama3-8b-instruct", // NVIDIA supported model
-          messages: [
-            { role: "system", content: systemMessage },
-            { role: "user", content: message }
-          ],
-          // NVCF specific parameters
-          temperature: 0.7,
-          max_tokens: 1000,
-          top_p: 0.95,
-          stream: false,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-        }
-      );
+      // Create OpenAI client with NVIDIA API configuration
+      const openai = new OpenAI({
+        apiKey: apiKey, // Use the NVIDIA API key from environment variables
+        baseURL: 'https://integrate.api.nvidia.com/v1',
+      });
+
+      // Make the API call using OpenAI client format
+      console.log("Making request to NVIDIA API using OpenAI client");
+      const completion = await openai.chat.completions.create({
+        model: "nvidia/llama-3.3-nemotron-super-49b-v1",
+        messages: [
+          {role: "system", content: systemMessage},
+          {role: "user", content: message}
+        ],
+        temperature: 0.6,
+        top_p: 0.95,
+        max_tokens: 1000,
+        stream: false,
+      });
       
-      console.log("NVIDIA API response received:", response.status);
+      console.log("NVIDIA API response received successfully");
       
-      // Extract the assistant's response from the API response
-      // This matches NVIDIA NVCF API response format
-      console.log("NVIDIA API response structure:", Object.keys(response.data).join(', '));
-      
-      if (response.data && response.data.choices && response.data.choices.length > 0) {
-        const choice = response.data.choices[0];
+      // Extract the response content
+      if (completion && completion.choices && completion.choices.length > 0) {
+        const choice = completion.choices[0];
         
-        // Log the format of the response for debugging
+        // Log the choice structure for debugging
         console.log("NVIDIA API choice structure:", Object.keys(choice).join(', '));
         
-        // Handle different response formats
         if (choice.message && choice.message.content) {
-          console.log("Received valid response from NVIDIA API (standard format)");
+          console.log("Received valid response from NVIDIA API");
           return choice.message.content;
-        } else if (choice.text) {
-          console.log("Received valid response from NVIDIA API (text format)");
-          return choice.text;
-        } else if (choice.content) {
-          console.log("Received valid response from NVIDIA API (content format)");
-          return choice.content;
-        } else {
-          console.log("Unexpected choice format, using fallback:", JSON.stringify(choice));
-          return getFallbackResponse(message);
         }
-      } else {
-        console.log("Unexpected API response format, using fallback:", JSON.stringify(response.data));
-        return getFallbackResponse(message);
       }
+      
+      console.log("Unexpected API response format, using fallback");
+      return getFallbackResponse(message);
     } catch (error: any) {
       console.error("Error calling NVIDIA API:", error?.message || "Unknown error");
-      console.error("NVIDIA API error details:", error?.response?.data || "No response data");
-      console.error("NVIDIA API error status:", error?.response?.status || "No status code");
+      
+      // Add detailed error logging
+      if (error.response) {
+        console.error("NVIDIA API error status:", error.response.status);
+        console.error("NVIDIA API error details:", JSON.stringify(error.response.data, null, 2));
+      } else {
+        console.error("No response object in error");
+      }
       
       // Add a more specific fallback response for API errors
       const errorResponse = "I'm having trouble connecting to my AI service right now. As a bunq banking assistant, I can still help with common questions. " + getFallbackResponse(message);
