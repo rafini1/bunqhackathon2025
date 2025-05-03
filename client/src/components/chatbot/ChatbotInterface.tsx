@@ -241,33 +241,51 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       description: `Sent ${transferDetails.amount} ${transferDetails.currency} to ${transferDetails.recipient}`,
       variant: "default"
     });
+    
+    // Add confirmation message to chat
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: (Date.now() + 1).toString(),
+        role: "system",
+        content: `Transfer completed successfully. ${transferDetails.amount} ${transferDetails.currency} has been sent to ${transferDetails.recipient}.`,
+        timestamp: new Date(),
+      },
+    ]);
+    
     setShowSendMoneyConfirmation(false);
   };
   
   const handleConfirmAction = () => {
     let title = "";
     let description = "";
+    let chatMessage = "";
     
     switch (actionDetails.type) {
       case 'block':
         title = "Card Blocked";
         description = "Your card has been successfully blocked.";
+        chatMessage = "Your card has been successfully blocked. If you need to unblock it later, just ask me.";
         break;
       case 'unblock':
         title = "Card Unblocked";
         description = "Your card has been successfully unblocked.";
+        chatMessage = "Your card has been successfully unblocked. You can now use it for transactions.";
         break;
       case 'request':
         title = "Money Request Sent";
         description = `Requested ${actionDetails.amount} ${actionDetails.currency} from ${actionDetails.recipient}`;
+        chatMessage = `Money request completed. You've requested ${actionDetails.amount} ${actionDetails.currency} from ${actionDetails.recipient}. They'll be notified shortly.`;
         break;
       case 'savings':
         title = "Savings Account Created";
         description = `New savings account "${actionDetails.accountName}" has been created.`;
+        chatMessage = `Your new savings account "${actionDetails.accountName}" has been created successfully. You can start adding funds to it right away.`;
         break;
       case 'navigate':
         title = "Navigation";
         description = `Navigating to ${actionDetails.destination}`;
+        chatMessage = `Navigating to ${actionDetails.destination} page. Is there anything specific you'd like to do there?`;
         break;
     }
     
@@ -276,6 +294,17 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       description,
       variant: "default"
     });
+    
+    // Add confirmation message to chat
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: (Date.now() + 1).toString(),
+        role: "system",
+        content: chatMessage,
+        timestamp: new Date(),
+      },
+    ]);
     
     setShowActionConfirmation(false);
   };
@@ -303,19 +332,10 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       
       const data = await apiResponse.json();
       
-      // Add the AI response to the chat
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "system",
-          content: data.response,
-          timestamp: new Date(),
-        },
-      ]);
-      
-      // Check for different response types
+      // Check for different response types before adding to chat
       const responseText = data.response;
+      let displayResponse = responseText;
+      let showActionCompleted = false;
       
       // Send Money (SM) - Transfer
       if (responseText.includes("SM;")) {
@@ -323,26 +343,29 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
         if (details) {
           setTransferDetails(details);
           setShowSendMoneyConfirmation(true);
-          return;
+          displayResponse = "I'll help you send money. Please confirm the details.";
+          showActionCompleted = true;
         }
       }
       
       // Block Card (BC)
-      if (parseBlockCardResponse(responseText)) {
+      else if (parseBlockCardResponse(responseText)) {
         setActionDetails({ type: 'block' });
         setShowActionConfirmation(true);
-        return;
+        displayResponse = "I'll help you block your card. Please confirm this action.";
+        showActionCompleted = true;
       }
       
       // Unblock Card (UC)
-      if (parseUnblockCardResponse(responseText)) {
+      else if (parseUnblockCardResponse(responseText)) {
         setActionDetails({ type: 'unblock' });
         setShowActionConfirmation(true);
-        return;
+        displayResponse = "I'll help you unblock your card. Please confirm this action.";
+        showActionCompleted = true;
       }
       
       // Send Money Request (SMR)
-      if (responseText.includes("SMR;")) {
+      else if (responseText.includes("SMR;")) {
         const details = parseMoneyRequestResponse(responseText);
         if (details) {
           setActionDetails({ 
@@ -352,12 +375,13 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             recipient: details.recipient 
           });
           setShowActionConfirmation(true);
-          return;
+          displayResponse = "I'll help you request money. Please confirm the details.";
+          showActionCompleted = true;
         }
       }
       
       // Savings Account (SA)
-      if (responseText.includes("SA;")) {
+      else if (responseText.includes("SA;")) {
         const details = parseSavingsAccountResponse(responseText);
         if (details) {
           setActionDetails({ 
@@ -365,12 +389,13 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             accountName: details.accountName 
           });
           setShowActionConfirmation(true);
-          return;
+          displayResponse = "I'll help you create a savings account. Please confirm the details.";
+          showActionCompleted = true;
         }
       }
       
       // Navigation (NAV)
-      if (responseText.includes("NAV")) {
+      else if (responseText.includes("NAV")) {
         const details = parseNavigationResponse(responseText);
         if (details) {
           setActionDetails({ 
@@ -378,9 +403,21 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
             destination: details.destination 
           });
           setShowActionConfirmation(true);
-          return;
+          displayResponse = "I'll help you navigate to the requested page. Please confirm this action.";
+          showActionCompleted = true;
         }
       }
+      
+      // Add the AI response to the chat
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "system",
+          content: displayResponse,
+          timestamp: new Date(),
+        },
+      ]);
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
       setMessages((prev) => [
