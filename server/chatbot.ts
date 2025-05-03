@@ -36,10 +36,10 @@ function getFallbackResponse(message: string): string {
 }
 
 // NVIDIA API Configuration
-// The following NVIDIA API details should match their API documentation
-// This is a generic setup that will need to be updated with the correct endpoints and parameters
-const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/chat/completions';
-// No function ID needed for the generic chat completions endpoint
+// Using the standard NVIDIA NGX (NIM) API endpoint for chat completions
+// Adjust this based on your NVIDIA API documentation if needed
+const NVIDIA_API_URL = 'https://api.nvidia.com/v1/chat/completions';
+// For troubleshooting, we'll add detailed logs
 
 // Handler for chatbot messages
 export async function handleChatbotMessage(message: string): Promise<string> {
@@ -63,7 +63,7 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       const response = await axios.post(
         NVIDIA_API_URL,
         {
-          model: "llama3-70b-instruct", // Using one of NVIDIA's supported models
+          model: "gpt-4", // Using a standard model that should be supported by most AI APIs
           messages: [
             { role: "system", content: systemMessage },
             { role: "user", content: message }
@@ -92,8 +92,13 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       }
     } catch (error: any) {
       console.error("Error calling NVIDIA API:", error?.message || "Unknown error");
-      // If there's an error with the API call, use the fallback responses
-      return getFallbackResponse(message);
+      console.error("NVIDIA API error details:", error?.response?.data || "No response data");
+      console.error("NVIDIA API error status:", error?.response?.status || "No status code");
+      
+      // Add a more specific fallback response for API errors
+      const errorResponse = "I'm having trouble connecting to my AI service right now. As a bunq banking assistant, I can still help with common questions. " + getFallbackResponse(message);
+      
+      return errorResponse;
     }
   } catch (error: any) {
     console.error("Error in chatbot message handler:", error?.message || "Unknown error");
