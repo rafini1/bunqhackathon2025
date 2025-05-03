@@ -1,9 +1,34 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, Cpu } from "lucide-react";
+import { X, Send, Cpu, Mic, MicOff } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { SendMoneyConfirmation } from "./SendMoneyConfirmation";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+// TypeScript definitions for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onend: () => void;
+  onerror: (event: Event) => void;
+  onstart: () => void;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+interface Window {
+  SpeechRecognition: new () => SpeechRecognition;
+  webkitSpeechRecognition: new () => SpeechRecognition;
+}
 
 interface Message {
   id: string;
@@ -36,14 +61,87 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showSendMoneyConfirmation, setShowSendMoneyConfirmation] = useState(false);
   const [transferDetails, setTransferDetails] = useState<TransferDetails>({});
+  const [isListening, setIsListening] = useState(false);
+  const [hasRecognitionSupport, setHasRecognitionSupport] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Initialize speech recognition
+  useEffect(() => {
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      setHasRecognitionSupport(true);
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      // Handle recognition results
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const current = event.resultIndex;
+        const transcript = event.results[current][0].transcript;
+        
+        // Set input value to the transcript
+        setInput(prev => prev + ' ' + transcript.trim());
+      };
+      
+      // Handle end of speech recognition
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      // Store recognition instance in ref
+      recognitionRef.current = recognition;
+    } else {
+      console.log('Speech recognition not supported in this browser');
+    }
+    
+    // Clean up
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          if (isListening) {
+            recognitionRef.current.stop();
+          }
+        } catch (error) {
+          console.error('Error stopping speech recognition:', error);
+        }
+      }
+    };
+  }, [isListening]);
+  
+  // Toggle speech recognition
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        toast({
+          title: "Microphone Error",
+          description: "Unable to access microphone. Please check permissions.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+  
   useEffect(() => {
     scrollToBottom();
     if (isOpen && inputRef.current) {
@@ -178,6 +276,24 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
             />
+            
+            {/* Microphone button for speech-to-text */}
+            {hasRecognitionSupport && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`rounded-full w-10 h-10 flex items-center justify-center transition-colors ${
+                  isListening 
+                    ? "bg-red-500 text-white animate-pulse" 
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+                disabled={isLoading}
+                title={isListening ? "Stop listening" : "Start voice input"}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
+            
             <button
               type="submit"
               className="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-50"
@@ -186,6 +302,14 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
               <Send className="h-4 w-4" />
             </button>
           </div>
+          
+          {isListening && (
+            <div className="flex items-center justify-center mt-2 bg-red-500 bg-opacity-10 py-1 px-2 rounded text-xs text-red-400">
+              <span className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-ping"></span>
+              Listening... Speak now
+            </div>
+          )}
+          
           <div className="flex justify-center mt-2">
             <p className="text-xs text-gray-500">Powered by NVIDIA AI</p>
           </div>
