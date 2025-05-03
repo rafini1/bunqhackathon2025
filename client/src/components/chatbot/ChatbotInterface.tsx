@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Send, Cpu } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
+import { SendMoneyConfirmation } from "./SendMoneyConfirmation";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -15,6 +17,12 @@ interface ChatbotInterfaceProps {
   onClose: () => void;
 }
 
+interface TransferDetails {
+  amount?: string;
+  currency?: string;
+  recipient?: string;
+}
+
 export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -26,9 +34,12 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSendMoneyConfirmation, setShowSendMoneyConfirmation] = useState(false);
+  const [transferDetails, setTransferDetails] = useState<TransferDetails>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const { toast } = useToast();
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -39,6 +50,29 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       inputRef.current.focus();
     }
   }, [messages, isOpen]);
+
+  // Parse SM response format: SM;amount;currency;recipient
+  const parseSendMoneyResponse = (response: string): TransferDetails | null => {
+    if (!response.startsWith("SM;")) return null;
+    
+    const parts = response.split(";");
+    if (parts.length !== 4) return null;
+    
+    return {
+      amount: parts[1],
+      currency: parts[2],
+      recipient: parts[3]
+    };
+  };
+  
+  const handleConfirmTransfer = () => {
+    toast({
+      title: "Transfer Successful",
+      description: `Sent ${transferDetails.amount} ${transferDetails.currency} to ${transferDetails.recipient}`,
+      variant: "default"
+    });
+    setShowSendMoneyConfirmation(false);
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -63,6 +97,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       
       const data = await response.json();
       
+      // Add the AI response to the chat
       setMessages((prev) => [
         ...prev,
         {
@@ -72,6 +107,15 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
           timestamp: new Date(),
         },
       ]);
+      
+      // Check if the response contains a money transfer request
+      if (data.response.includes("SM;")) {
+        const details = parseSendMoneyResponse(data.response);
+        if (details) {
+          setTransferDetails(details);
+          setShowSendMoneyConfirmation(true);
+        }
+      }
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
       setMessages((prev) => [
@@ -147,6 +191,14 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
           </div>
         </form>
       </div>
+      
+      {/* Send Money Confirmation Dialog */}
+      <SendMoneyConfirmation
+        isOpen={showSendMoneyConfirmation}
+        onClose={() => setShowSendMoneyConfirmation(false)}
+        onConfirm={handleConfirmTransfer}
+        transferDetails={transferDetails}
+      />
     </div>
   );
 }
