@@ -36,9 +36,10 @@ function getFallbackResponse(message: string): string {
 }
 
 // NVIDIA API Configuration
-// Note: The actual endpoint might need to be adjusted based on NVIDIA's specific API documentation
-const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions';
-const NVIDIA_FUNCTION_ID = 'bunq-banking-assistant'; // Replace with your actual function ID if needed
+// The following NVIDIA API details should match their API documentation
+// This is a generic setup that will need to be updated with the correct endpoints and parameters
+const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/chat/completions';
+// No function ID needed for the generic chat completions endpoint
 
 // Handler for chatbot messages
 export async function handleChatbotMessage(message: string): Promise<string> {
@@ -58,16 +59,17 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       // Prepare the system message to provide context for the AI
       const systemMessage = "You are a helpful banking assistant for bunq bank. Answer user questions about banking, accounts, and financial services. Be concise and accurate.";
       
-      // Make the actual NVIDIA API call
+      // Make the actual NVIDIA API call with the format that matches NVIDIA's API
       const response = await axios.post(
-        `${NVIDIA_API_URL}/${NVIDIA_FUNCTION_ID}`,
+        NVIDIA_API_URL,
         {
-          input: {
-            messages: [
-              { role: "system", content: systemMessage },
-              { role: "user", content: message }
-            ]
-          }
+          model: "llama3-70b-instruct", // Using one of NVIDIA's supported models
+          messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: message }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7
         },
         {
           headers: {
@@ -80,12 +82,12 @@ export async function handleChatbotMessage(message: string): Promise<string> {
       console.log("NVIDIA API response received:", response.status);
       
       // Extract the assistant's response from the API response
-      // Note: The exact structure depends on NVIDIA's API response format
-      // This is a generic example and might need adjustment
-      if (response.data && response.data.output && response.data.output.content) {
-        return response.data.output.content;
+      // This should match the standard chat completion API response format
+      if (response.data && response.data.choices && response.data.choices.length > 0) {
+        console.log("Received valid response from NVIDIA API");
+        return response.data.choices[0].message.content;
       } else {
-        console.log("Unexpected API response format, using fallback:", response.data);
+        console.log("Unexpected API response format, using fallback:", JSON.stringify(response.data));
         return getFallbackResponse(message);
       }
     } catch (error: any) {
