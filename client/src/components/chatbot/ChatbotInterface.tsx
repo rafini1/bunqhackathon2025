@@ -5,6 +5,7 @@ import { SendMoneyConfirmation } from "./SendMoneyConfirmation";
 import { ActionConfirmation, ActionType } from "./ActionConfirmation";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useBalance } from "../../contexts/BalanceContext";
 
 // TypeScript definitions for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -78,6 +79,7 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
+  const { updateBalances } = useBalance();
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -241,6 +243,15 @@ export function ChatbotInterface({ isOpen, onClose }: ChatbotInterfaceProps) {
       description: `Sent ${transferDetails.amount} ${transferDetails.currency} to ${transferDetails.recipient}`,
       variant: "default"
     });
+    
+    // Deduct the amount from the balance
+    if (transferDetails.amount) {
+      // Convert amount from string (e.g., "5.00") to number
+      const amountToDeduct = parseFloat(transferDetails.amount);
+      if (!isNaN(amountToDeduct)) {
+        updateBalances(amountToDeduct);
+      }
+    }
     
     // Add confirmation message to chat
     setMessages((prev) => [

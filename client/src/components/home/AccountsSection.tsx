@@ -2,6 +2,7 @@ import React from "react";
 import { ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { TotalBalance, Main, Savings, Card } from "@/lib/icons";
+import { useBalance } from "../../contexts/BalanceContext";
 
 interface Account {
   id: number;
@@ -17,13 +18,15 @@ export function AccountsSection() {
   const { data: accounts, isLoading } = useQuery<Account[]>({
     queryKey: ['/api/accounts'],
   });
+  
+  const { totalBalance, mainBalance } = useBalance();
 
   const defaultAccounts: Account[] = [
     {
       id: 1,
       type: "total",
       name: "Total Balance",
-      balance: "€ 0,00",
+      balance: "€ 100,00",
       color: "purple",
       icon: "wallet"
     },
@@ -31,7 +34,7 @@ export function AccountsSection() {
       id: 2,
       type: "main",
       name: "Main",
-      balance: "€ 0,00",
+      balance: "€ 100,00",
       color: "orange",
       icon: "circle"
     },
@@ -136,7 +139,10 @@ export function AccountsSection() {
                   </span>
                 </div>
                 <div className="text-white font-bold text-xl">
-                  {account.status ? account.status : account.balance}
+                  {account.status ? account.status : 
+                   account.type === "total" ? `€ ${totalBalance.toFixed(2).replace('.', ',')}` :
+                   account.type === "main" ? `€ ${mainBalance.toFixed(2).replace('.', ',')}` :
+                   account.balance}
                 </div>
               </React.Fragment>
             )}

@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { BalanceProvider } from "./contexts/BalanceContext";
 
 function Router() {
   return (
@@ -15,12 +16,12 @@ function Router() {
 
 function App() {
   return (
-    <>
+    <BalanceProvider>
       <AppLayout>
         <Router />
       </AppLayout>
       <Toaster />
-    </>
+    </BalanceProvider>
   );
 }
 
